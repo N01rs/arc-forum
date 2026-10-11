@@ -488,6 +488,7 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SEED_KEY = 'arc.seed.v1';
 
@@ -513,25 +514,63 @@ function posterId(threadId){
   return hash(getUserSeed() + '::' + threadId).slice(0, 8);
 }
 
-const STORAGE_KEY = 'arc.data.v1';
-let db = { threads: [] };
+const SUPABASE_URL = 'YOUR_PROJECT_URL';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function load(){
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) db = JSON.parse(raw);
-  } catch (err){
-    console.warn('Could not read saved data, starting fresh.', err);
-  }
-  if (!Array.isArray(db.threads)) db.threads = [];
+let threads = [];
+
+async function loadThreads() {
+  const { data: threadData, error: threadError } = await supabase
+    .from('threads')
+    .select('*')
+    .order('bumped_at', { ascending: false });
+
+  if (threadError) { console.error(threadError); threads = []; return; }
+
+  const { data: replyData, error: replyError } = await supabase
+    .from('replies')
+    .select('*')
+    .order('created_at', { ascending: true });
+
+  if (replyError) { console.error(replyError); }
+
+  threads = threadData.map(t => ({
+    ...t,
+    replies: (replyData || []).filter(r => r.thread_id === t.id)
+  }));
 }
 
-function save(){
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-  } catch (err){
-    console.warn('Could not save (storage full or blocked).', err);
-  }
+async function createThread(title, body, posterId) {
+  const { data, error } = await supabase
+    .from('threads')
+    .insert({ title, body, poster_id: posterId })
+    .select()
+    .single();
+  if (error) { console.error(error); return null; }
+  return data;
+}
+
+async function createReply(threadId, body, posterId) {
+  const { data, error } = await supabase
+    .from('replies')
+    .insert({ thread_id: threadId, body, poster_id: posterId })
+    .select()
+    .single();
+  if (error) { console.error(error); return null; }
+  await supabase
+    .from('threads')
+    .update({ bumped_at: new Date().toISOString() })
+    .eq('id', threadId);
+  return data;
+}
+
+async function deleteThread(id) {
+  await supabase.from('threads').delete().eq('id', id);
+}
+
+async function deleteReply(id) {
+  await supabase.from('replies').delete().eq('id', id);
 }
 
 const MEDIA_DB_NAME  = 'arc.media.v1';
@@ -779,13 +818,13 @@ function timeAgo(ts){
 }
 
 function sortedThreads(){
-  return [...db.threads].sort((a, b) => b.bumpedAt - a.bumpedAt);
+  return [...threads].sort((a, b) => b.bumped_at - a.bumped_at);
 }
 
 let searchQuery = '';
 
-function render(){
-  releaseUrls();                         
+async function render(){
+  await loadThreads();
   const route = location.hash.slice(1) || '/';
   updateNav(route);
 
@@ -799,7 +838,6 @@ function render(){
   }
 
   window.scrollTo(0, 0);
-  hydrateMedia().catch(err => console.warn(err));
 }
 
 function updateNav(route){
@@ -940,8 +978,7 @@ function paintThreadList(){
   list.innerHTML = threads.map(t => threadCard(t, q)).join('');
 }
 
-function renderThread(id){
-  const t = db.threads.find(x => x.id === id);
+const t = threads.find(x => x.id === id);
 
   if (!t){
     app.innerHTML = `
@@ -1070,126 +1107,66 @@ document.addEventListener('submit', async e => {
 
   if (form.id === 'new-thread-form'){
     e.preventDefault();
-    const fd    = new FormData(form);
-    const body  = (fd.get('body') || '').trim();
-    const files = draftFor(form).slice();
-
-    if (!body && !files.length){
-      alert('Write something or attach a photo/video first.');
-      return;
-    }
-
-    const btn = form.querySelector('button[type="submit"]');
-    if (btn){ btn.disabled = true; btn.textContent = 'Posting…'; }
-
-    const media = await storeFiles(files);
+    const fd   = new FormData(form);
+    const body = (fd.get('body') || '').trim();
+    if (!body) return;
 
     const title = (fd.get('title') || '').trim()
                   || body.split('\n')[0].slice(0, 80)
-                  || (media[0] && media[0].name.slice(0, 80))
                   || 'Untitled';
 
-    const id  = uid();
-    const now = Date.now();
+    const id = uid();
+    const poster = posterId(id);
 
-    db.threads.push({
-      id,
-      title,
-      body,
-      media,
-      createdAt: now,
-      bumpedAt:  now,
-      posterId:  posterId(id),
-      replies:   []
-    });
-
-    save();
-
-    drafts.delete(form.id);
-    clearPreviewUrls();
-
-    const target = '#/thread/' + encodeURIComponent(id);
-    if (location.hash === target) render();
-    else location.hash = target;
+    const created = await createThread(title, body, poster);
+    if (created) {
+      const target = '#/thread/' + encodeURIComponent(created.id);
+      if (location.hash === target) render();
+      else location.hash = target;
+    }
     return;
   }
 
   if (form.id === 'reply-form'){
     e.preventDefault();
-    const fd    = new FormData(form);
-    const body  = (fd.get('body') || '').trim();
-    const files = draftFor(form).slice();
+    const fd   = new FormData(form);
+    const body = (fd.get('body') || '').trim();
+    if (!body) return;
 
-    if (!body && !files.length) return;
+    const threadId = form.dataset.thread;
+    const poster = posterId(threadId);
 
-    const t = db.threads.find(x => x.id === form.dataset.thread);
-    if (!t) return;
-
-    const btn = form.querySelector('button[type="submit"]');
-    if (btn){ btn.disabled = true; btn.textContent = 'Sending…'; }
-
-    const media = await storeFiles(files);
-
-    const reply = {
-      id:        uid(),
-      body,
-      media,
-      createdAt: Date.now(),
-      posterId:  posterId(t.id)
-    };
-
-    t.replies.push(reply);
-    t.bumpedAt = Date.now();
-    save();
-
-    drafts.delete(form.id);
-    clearPreviewUrls();
-    render();
-
-    const el = document.getElementById('p-' + reply.id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const reply = await createReply(threadId, body, poster);
+    if (reply) {
+      render();
+      // Scroll to the new reply after render
+      setTimeout(() => {
+        const el = document.getElementById('p-' + reply.id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
   }
 });
 
-app.addEventListener('click', e => {
+app.addEventListener('click', async e => {
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
 
   const action = btn.dataset.action;
 
   if (action === 'del-reply'){
-    const t = db.threads.find(x => x.id === btn.dataset.thread);
-    if (!t) return;
     if (!confirm('Delete this reply?')) return;
-
-    const gone = t.replies.find(r => r.id === btn.dataset.reply);
-    t.replies = t.replies.filter(r => r.id !== btn.dataset.reply);
-    save();
-
-    if (gone) delMedia((gone.media || []).map(m => m.id));
+    await deleteReply(btn.dataset.reply);
     render();
   }
 
   if (action === 'del-thread'){
     if (!confirm('Delete this entire thread and all its replies?')) return;
-
-    const gone = db.threads.find(x => x.id === btn.dataset.id);
-    db.threads = db.threads.filter(x => x.id !== btn.dataset.id);
-    save();
-
-    if (gone){
-      const ids = [
-        ...(gone.media || []).map(m => m.id),
-        ...gone.replies.flatMap(r => (r.media || []).map(m => m.id))
-      ];
-      delMedia(ids);
-    }
-
+    await deleteThread(btn.dataset.id);
     if (location.hash === '#/threads') render();
     else location.hash = '#/threads';
   }
 });
-
 
 document.addEventListener('change', e => {
   const input = e.target;
@@ -1227,7 +1204,6 @@ document.addEventListener('click', e => {
 
 window.addEventListener('hashchange', render);
 
-load();
 render();
 </script>
 </body>
