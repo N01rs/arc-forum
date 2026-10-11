@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>ARCanum</title>
+<style>
+  :root{
+    --bg:#0f0f12;
+    --panel:#17171c;
+    --panel-2:#1e1e25;
+    --border:#2b2b35;
+    --text:#e2e2ea;
+    --muted:#83839a;
+    --dim:#4a4a5c;
+    --accent:#6ee7b7;
+    --danger:#f87171;
+    --radius:12px;
+    --sidebar-w:236px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 600px at 60% -200px,#1b1b24,var(--bg));
+    color:var(--text);
+    font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .layout{display:flex;min-height:100vh}
+
+  .sidebar{
+    width:var(--sidebar-w);
+    flex:0 0 var(--sidebar-w);
+    background:var(--panel);
+    border-right:1px solid var(--border);
+    padding:22px 14px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+  }
+  .brand{
+    padding:0 10px;
+    line-height:1.15;
+  }
+  .brand .mark{
+    display:block;
+    font-size:22px;
+    letter-spacing:.34em;
+    color:var(--accent);
+    text-shadow:0 0 22px rgba(110,231,183,.35);
+  }
+  .brand .sub{
+    display:block;
+    margin-top:6px;
+    font-size:9px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--dim);
+  }
+
+  .nav{display:flex;flex-direction:column;gap:4px}
+  .nav a{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:9px 12px;
+    border-radius:8px;
+    color:var(--muted);
+    font-size:13.5px;
+    transition:background .15s,color .15s;
+  }
+  .nav a:hover{background:var(--panel-2);color:var(--text);text-decoration:none}
+  .nav a.active{background:rgba(110,231,183,.10);color:var(--accent)}
+  .nav .num{font-size:10px;color:var(--dim);letter-spacing:.08em}
+  .nav a.active .num{color:var(--accent);opacity:.65}
+
+  .sidebar-foot{
+    margin-top:auto;
+    padding:14px 10px 0;
+    border-top:1px solid var(--border);
+  }
+  .sidebar-foot p{
+    margin:0 0 12px;
+    font-size:10.5px;
+    line-height:1.7;
+    letter-spacing:.06em;
+    color:var(--dim);
+  }
+  .sidebar-foot button{
+    width:100%;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:8px;
+    padding:7px 10px;
+    font:inherit;
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:color .15s,border-color .15s;
+  }
+  .sidebar-foot button:hover{color:var(--danger);border-color:var(--danger)}
+
+  .main{flex:1;min-width:0}
+  .wrap{max-width:840px;margin:0 auto;padding:34px 26px 70px}
+
+  .page-head{margin-bottom:24px}
+  .page-title{
+    margin:0 0 8px;
+    font-size:clamp(19px,3.6vw,27px);
+    line-height:1.28;
+    letter-spacing:.14em;
+    color:var(--accent);
+    text-shadow:0 0 26px rgba(110,231,183,.28);
+  }
+  .page-title.small{font-size:19px;letter-spacing:.14em}
+  .page-sub{
+    margin:0;
+    color:var(--muted);
+    font-size:12px;
+    letter-spacing:.06em;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-size:13px;
+    margin:0 0 12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    font-weight:600;
+  }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .stat-num{
+    display:block;
+    font-size:22px;
+    font-weight:700;
+    color:var(--accent);
+    line-height:1.2;
+  }
+  .stat-label{
+    display:block;
+    margin-top:3px;
+    font-size:10px;
+    letter-spacing:.11em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  input,textarea{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--text);
+    padding:10px 12px;
+    font:inherit;
+    resize:vertical;
+    margin-bottom:10px;
+  }
+  input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  input::placeholder,textarea::placeholder{color:#5c5c70}
+
+  button{
+    background:var(--accent);
+    color:#06251b;
+    border:none;
+    border-radius:8px;
+    padding:9px 18px;
+    font:inherit;
+    font-weight:700;
+    cursor:pointer;
+    transition:filter .15s;
+  }
+  button:hover{filter:brightness(1.12)}
+
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .hint{color:var(--muted);font-size:12px}
+  .hint b{color:var(--accent)}
+
+  .search-bar{margin-bottom:16px}
+  .search-bar input{margin:0}
+  .search-meta{
+    font-size:11px;
+    letter-spacing:.08em;
+    color:var(--dim);
+    text-transform:uppercase;
+    margin:0 0 14px 2px;
+  }
+  .search-meta b{color:var(--accent)}
+
+  .thread-card{transition:border-color .15s,transform .15s}
+  .thread-card:hover{border-color:#3d3d4d;transform:translateY(-1px)}
+  .thread-card h3{font-size:17px;margin:0 0 6px}
+  .thread-card h3 a{color:var(--text)}
+  .thread-card h3 a:hover{color:var(--accent);text-decoration:none}
+  .thread-card .body{
+    color:#b9b9c9;
+    font-size:14px;
+    max-height:4.6em;
+    overflow:hidden;
+    margin:0;
+  }
+  mark{
+    background:rgba(110,231,183,.22);
+    color:var(--accent);
+    border-radius:3px;
+    padding:0 2px;
+  }
+
+  .meta{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .pid{
+    color:var(--accent);
+    background:rgba(110,231,183,.08);
+    padding:1px 7px;
+    border-radius:4px;
+  }
+  .tag{background:var(--accent);color:#06251b;padding:1px 7px;border-radius:4px;font-weight:700}
+  .del{
+    margin-left:auto;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:0 8px;
+    font-size:14px;
+    line-height:20px;
+    font-weight:400;
+  }
+  .del:hover{color:var(--danger);border-color:var(--danger);filter:none}
+
+  .body{white-space:pre-wrap;word-break:break-word;margin:0}
+
+  .op{border-left:3px solid var(--accent)}
+  .op h2{
+    font-size:20px;
+    color:var(--text);
+    text-transform:none;
+    letter-spacing:0;
+    margin:0 0 8px;
+  }
+  .reply{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-left:3px solid #3a3a48;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+
+  .section-title{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:var(--muted);
+    margin:26px 0 12px;
+    font-weight:600;
+  }
+  .back{
+    display:inline-block;
+    margin-bottom:16px;
+    font-size:12px;
+    letter-spacing:.08em;
+    color:var(--muted);
+  }
+  .back:hover{color:var(--accent);text-decoration:none}
+  .empty{
+    color:var(--muted);
+    text-align:center;
+    padding:34px 12px;
+    font-size:14px;
+  }
+
+  .login-box{
+    text-align:center;
+    padding:38px 24px;
+  }
+  .login-box .glyph{
+    font-size:30px;
+    color:var(--accent);
+    opacity:.7;
+    margin-bottom:14px;
+    letter-spacing:.3em;
+  }
+  .login-box h2{
+    font-size:16px;
+    color:var(--text);
+    text-transform:none;
+    letter-spacing:.02em;
+    margin:0 0 10px;
+  }
+  .login-box p{
+    margin:0 auto 10px;
+    max-width:440px;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .login-box .slot{
+    margin-top:22px;
+    padding:22px;
+    border:1px dashed var(--border);
+    border-radius:10px;
+    color:var(--dim);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+  }
+
+  .file-drop{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    border:1px dashed var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    color:var(--muted);
+    font-size:12px;
+    letter-spacing:.06em;
+    cursor:pointer;
+    transition:border-color .15s,color .15s;
+    margin-bottom:10px;
+    user-select:none;
+  }
+  .file-drop:hover{border-color:var(--accent);color:var(--accent)}
+
+  .preview-strip{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .preview-strip:empty{display:none}
+  .preview{
+    position:relative;
+    width:82px;height:82px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    background:var(--panel-2);
+  }
+  .preview img,.preview video{width:100%;height:100%;object-fit:cover;display:block}
+  .preview-x{
+    position:absolute;top:3px;right:3px;
+    width:20px;height:20px;line-height:18px;padding:0;
+    border:none;border-radius:50%;
+    background:rgba(0,0,0,.7);color:#fff;
+    font-size:13px;font-weight:400;cursor:pointer;
+  }
+  .preview-x:hover{background:var(--danger);filter:none}
+
+  .media-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:8px;
+    margin-top:12px;
+  }
+
+  .media-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  
+  .media-item{
+    margin:0;
+    min-height:100px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .media-item .media-el{
+    width:100%;height:100%;max-height:340px;
+    object-fit:cover;display:block;
+  }
+  .media-item[data-media-kind="image"] .media-el{cursor:zoom-in}
+  .media-loading,.media-missing-text{
+    color:var(--dim);font-size:11px;letter-spacing:.1em;padding:18px;
+  }
+  .media-count{
+    color:var(--accent);
+    background:rgba(110,231,183,.08);
+    padding:1px 7px;border-radius:4px;
+  }
+
+  .lightbox{
+    position:fixed;inset:0;z-index:999;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(5,5,8,.93);
+    padding:24px;
+  }
+  .lightbox.open{display:flex}
+  .lightbox-body{max-width:min(1100px,100%);max-height:100%;display:flex}
+  .lightbox-body img,.lightbox-body video{
+    max-width:100%;max-height:88vh;border-radius:10px;display:block;
+  }
+  .lightbox-close{
+    position:absolute;top:16px;right:20px;
+    width:38px;height:38px;padding:0;
+    font-size:22px;line-height:36px;
+    background:transparent;color:var(--muted);
+    border:1px solid var(--border);border-radius:50%;
+  }
+  .lightbox-close:hover{color:var(--danger);border-color:var(--danger);filter:none}
+
+  @media (max-width:780px){
+    .layout{flex-direction:column}
+    .sidebar{
+      width:auto;
+      flex:none;
+      height:auto;
+      position:static;
+      flex-direction:row;
+      align-items:center;
+      gap:16px;
+      padding:12px 16px;
+      overflow-x:auto;
+      border-right:none;
+      border-bottom:1px solid var(--border);
+    }
+    .brand{flex:none}
+    .brand .mark{font-size:17px;letter-spacing:.26em}
+    .brand .sub{display:none}
+    .nav{flex-direction:row;gap:4px}
+    .nav a{padding:7px 10px;font-size:12.5px;white-space:nowrap}
+    .nav .num{display:none}
+    .sidebar-foot{display:none}
+    .wrap{padding:24px 16px 60px}
+  }
+  @media (max-width:640px){
+    .stats{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">A.R.C</span>
+      <span class="sub">Receptacle v1</span>
+    </div>
+
+    <nav class="nav">
+      <a href="#/"><span class="num">01</span>Dashboard</a>
+      <a href="#/threads"><span class="num">02</span>Threads</a>
+      <a href="#/login"><span class="num">03</span>Login</a>
+      <a href="index.html" class="home-link"><span class="num">←</span>Back to Homepage</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <p>No accounts.<br>No tracking.<br>Data lives in this browser.<br><br> Made by N01r</p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <main id="app" class="wrap"></main>
+  </div>
+
+</div>
+
+<script>
+const SEED_KEY = 'arc.seed.v1';
+
+function getUserSeed(){
+  let seed = localStorage.getItem(SEED_KEY);
+  if (!seed){
+    seed = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem(SEED_KEY, seed);
+  }
+  return seed;
+}
+
+function hash(str){
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+function posterId(threadId){
+  return hash(getUserSeed() + '::' + threadId).slice(0, 8);
+}
+
+const STORAGE_KEY = 'arc.data.v1';
+let db = { threads: [] };
+
+function load(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) db = JSON.parse(raw);
+  } catch (err){
+    console.warn('Could not read saved data, starting fresh.', err);
+  }
+  if (!Array.isArray(db.threads)) db.threads = [];
+}
+
+function save(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  } catch (err){
+    console.warn('Could not save (storage full or blocked).', err);
+  }
+}
+
+const MEDIA_DB_NAME  = 'arc.media.v1';
+const MEDIA_STORE    = 'blobs';
+const MAX_FILE_MB    = 50;
+const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+
+let mediaDBPromise = null;
+
+function openMediaDB(){
+  if (mediaDBPromise) return mediaDBPromise;
+  mediaDBPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(MEDIA_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(MEDIA_STORE)){
+        db.createObjectStore(MEDIA_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+  return mediaDBPromise;
+}
+
+async function putMedia(id, blob){
+  const db = await openMediaDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_STORE, 'readwrite');
+    tx.objectStore(MEDIA_STORE).put(blob, id);
+    tx.oncomplete = () => resolve(id);
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+async function getMedia(id){
+  const db = await openMediaDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_STORE, 'readonly');
+    const r  = tx.objectStore(MEDIA_STORE).get(id);
+    r.onsuccess = () => resolve(r.result || null);
+    r.onerror   = () => reject(r.error);
+  });
+}
+
+async function delMedia(ids){
+  if (!ids || !ids.length) return;
+  try {
+    const db = await openMediaDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(MEDIA_STORE, 'readwrite');
+      const store = tx.objectStore(MEDIA_STORE);
+      ids.forEach(id => store.delete(id));
+      tx.oncomplete = () => resolve();
+      tx.onerror    = () => reject(tx.error);
+    });
+  } catch (err){
+    console.warn('Could not delete media.', err);
+  }
+}
+
+const liveUrls = new Set();
+
+function releaseUrls(){
+  liveUrls.forEach(u => URL.revokeObjectURL(u));
+  liveUrls.clear();
+}
+
+const drafts = new Map();
+
+function draftFor(form){
+  if (!drafts.has(form.id)) drafts.set(form.id, []);
+  return drafts.get(form.id);
+}
+
+let previewUrls = [];
+
+function clearPreviewUrls(){
+  previewUrls.forEach(u => URL.revokeObjectURL(u));
+  previewUrls = [];
+}
+
+function renderPreview(form){
+  const strip = form.querySelector('.preview-strip');
+  if (!strip) return;
+  clearPreviewUrls();
+
+  strip.innerHTML = draftFor(form).map((f, i) => {
+    const url = URL.createObjectURL(f);
+    previewUrls.push(url);
+    const isVideo = f.type.startsWith('video/');
+    return `<div class="preview">
+      ${isVideo
+        ? `<video src="${url}" muted playsinline preload="metadata"></video>`
+        : `<img src="${url}" alt="">`}
+      <button type="button" class="preview-x" data-remove="${i}" title="Remove">×</button>
+    </div>`;
+  }).join('');
+}
+
+async function storeFiles(files){
+  const out = [];
+  for (const f of files){
+    const id = uid();
+    try {
+      await putMedia(id, f);
+      out.push({
+        id,
+        kind: f.type.startsWith('video/') ? 'video' : 'image',
+        name: f.name,
+        size: f.size,
+        type: f.type
+      });
+    } catch (err){
+      console.warn('Could not store "' + f.name + '".', err);
+    }
+  }
+  return out;
+}
+
+function mediaHTML(list){
+  if (!list || !list.length) return '';
+  return `<div class="media-grid">` + list.map(m => `
+    <figure class="media-item"
+            data-media-id="${esc(m.id)}"
+            data-media-kind="${esc(m.kind)}"
+            data-media-name="${esc(m.name || '')}">
+      <span class="media-loading">loading…</span>
+    </figure>
+  `).join('') + `</div>`;
+}
+
+async function hydrateMedia(root){
+  const scope = root || document;
+  const nodes = scope.querySelectorAll('[data-media-id]:not([data-loaded])');
+
+  for (const node of nodes){
+    node.dataset.loaded = '1';
+
+    let blob = null;
+    try { blob = await getMedia(node.dataset.mediaId); } catch (err){ /* ignore */ }
+
+    if (!blob){
+      node.innerHTML = '<span class="media-missing-text">media unavailable</span>';
+      continue;
+    }
+
+    const url = URL.createObjectURL(blob);
+    liveUrls.add(url);
+    node.innerHTML = '';
+
+    if (node.dataset.mediaKind === 'video'){
+      const v = document.createElement('video');
+      v.src = url;
+      v.controls = true;
+      v.preload = 'metadata';
+      v.playsInline = true;
+      v.className = 'media-el';
+      node.appendChild(v);
+    } else {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = node.dataset.mediaName || 'attachment';
+      img.loading = 'lazy';
+      img.className = 'media-el';
+      img.addEventListener('click', () => openLightbox(url, 'image'));
+      node.appendChild(img);
+    }
+  }
+}
+
+function openLightbox(url, kind){
+  let lb = document.getElementById('lightbox');
+  if (!lb){
+    lb = document.createElement('div');
+    lb.id = 'lightbox';
+    lb.className = 'lightbox';
+    lb.innerHTML =
+      '<button class="lightbox-close" aria-label="Close">×</button>' +
+      '<div class="lightbox-body"></div>';
+    lb.addEventListener('click', ev => {
+      if (ev.target === lb || ev.target.classList.contains('lightbox-close')) closeLightbox();
+    });
+    document.body.appendChild(lb);
+  }
+
+  const body = lb.querySelector('.lightbox-body');
+  body.innerHTML = '';
+
+  if (kind === 'video'){
+    const v = document.createElement('video');
+    v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true;
+    body.appendChild(v);
+  } else {
+    const img = document.createElement('img');
+    img.src = url;
+    body.appendChild(img);
+  }
+
+  lb.classList.add('open');
+}
+
+function closeLightbox(){
+  const lb = document.getElementById('lightbox');
+  if (!lb) return;
+  lb.classList.remove('open');
+  lb.querySelector('.lightbox-body').innerHTML = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+ 
+function uid(){
+  return (crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+const app = document.getElementById('app');
+
+function esc(str){
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
+}
+
+function highlight(text, query){
+  const safe = esc(text);
+  if (!query) return safe;
+  const q = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return safe.replace(new RegExp('(' + q + ')', 'ig'), '<mark>$1</mark>');
+}
+
+function timeAgo(ts){
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60)    return s + 's ago';
+  const m = Math.floor(s / 60);
+  if (m < 60)    return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24)    return h + 'h ago';
+  const d = Math.floor(h / 24);
+  if (d < 30)    return d + 'd ago';
+  return new Date(ts).toLocaleDateString();
+}
+
+function sortedThreads(){
+  return [...db.threads].sort((a, b) => b.bumpedAt - a.bumpedAt);
+}
+
+let searchQuery = '';
+
+function render(){
+  releaseUrls();                         
+  const route = location.hash.slice(1) || '/';
+  updateNav(route);
+
+  if (route === '/' || route === '')      renderDashboard();
+  else if (route === '/threads')          renderThreadsPage();
+  else if (route === '/login')            renderLogin();
+  else {
+    const m = route.match(/^\/thread\/(.+)$/);
+    if (m) renderThread(decodeURIComponent(m[1]));
+    else   renderNotFound();
+  }
+
+  window.scrollTo(0, 0);
+  hydrateMedia().catch(err => console.warn(err));
+}
+
+function updateNav(route){
+  document.querySelectorAll('.nav a').forEach(a => {
+    const href = a.getAttribute('href').slice(1);
+    let active;
+
+    if (href === '/')            active = (route === '/' || route === '');
+    else if (href === '/threads') active = route === '/threads' || route.startsWith('/thread/');
+    else                          active = route === href;
+
+    a.classList.toggle('active', active);
+  });
+}
+
+function renderDashboard(){
+  const threads  = sortedThreads();
+  const nThreads = threads.length;
+  const nReplies = threads.reduce((n, t) => n + t.replies.length, 0);
+  const last     = threads[0] ? timeAgo(threads[0].bumpedAt) : '—';
+  const recent   = threads.slice(0, 3);
+
+  app.innerHTML = `
+    <div class="page-head">
+      <h1 class="page-title">Anonymous Receptacle for Consciousness</h1>
+      <p class="page-sub">Speak freely. No names, no accounts, no history.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num">${nThreads}</span>
+        <span class="stat-label">Threads</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">${nReplies}</span>
+        <span class="stat-label">Replies</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" style="font-size:16px;padding-top:4px">${last}</span>
+        <span class="stat-label">Last activity</span>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>Start a thread</h2>
+      <form id="new-thread-form">
+        <input name="title" maxlength="120" autocomplete="off"
+               placeholder="Title (optional)">
+        <textarea name="body" rows="4" maxlength="4000"
+                  placeholder="Say your thoughts..."></textarea>
+
+        <label class="file-drop" for="new-thread-files">
+          <input id="new-thread-files" type="file" accept="image/*,video/*" multiple hidden>
+          <span>＋ Attach photos or videos</span>
+        </label>
+        <div class="preview-strip"></div>
+
+        <div class="row">
+          <span class="hint">Posting anonymously — you get a fresh ID per thread</span>
+          <button type="submit">Post thread</button>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <h3 class="section-title">Recent activity</h3>
+      ${recent.length
+        ? recent.map(t => threadCard(t, '')).join('')
+        : '<p class="empty">Nothing here yet. Start the first thread above.</p>'}
+      ${nThreads > 3
+        ? `<p class="search-meta" style="text-align:center;margin-top:18px">
+             <a href="#/threads">Browse all ${nThreads} threads →</a>
+           </p>`
+        : ''}
+    </section>
+  `;
+}
+
+function renderThreadsPage(){
+  app.innerHTML = `
+    <div class="page-head">
+      <h1 class="page-title small">Threads</h1>
+      <p class="page-sub">Every conversation currently in the receptacle.</p>
+    </div>
+
+    <div class="search-bar">
+      <input id="search" type="search" autocomplete="off"
+             placeholder="Search threads by title, body or reply..."
+             value="${esc(searchQuery)}">
+    </div>
+
+    <p class="search-meta" id="search-meta"></p>
+    <div id="thread-list"></div>
+  `;
+
+  const input = document.getElementById('search');
+  input.addEventListener('input', () => {
+    searchQuery = input.value;
+    paintThreadList();
+  });
+
+  paintThreadList();
+}
+
+function paintThreadList(){
+  const list = document.getElementById('thread-list');
+  const meta = document.getElementById('search-meta');
+  if (!list) return;
+
+  const q = searchQuery.trim();
+  const needle = q.toLowerCase();
+
+  let threads = sortedThreads();
+
+  if (needle){
+    threads = threads.filter(t =>
+      t.title.toLowerCase().includes(needle) ||
+      t.body.toLowerCase().includes(needle) ||
+      t.replies.some(r => r.body.toLowerCase().includes(needle))
+    );
+  }
+
+  if (meta){
+    meta.innerHTML = needle
+      ? `<b>${threads.length}</b> result${threads.length === 1 ? '' : 's'} for “${esc(q)}”`
+      : `<b>${threads.length}</b> thread${threads.length === 1 ? '' : 's'} · sorted by latest activity`;
+  }
+
+  if (!threads.length){
+    list.innerHTML = `<p class="empty">${
+      needle
+        ? 'No threads match that search.'
+        : 'No threads yet. Head to the dashboard to start one.'
+    }</p>`;
+    return;
+  }
+
+  list.innerHTML = threads.map(t => threadCard(t, q)).join('');
+}
+
+function renderThread(id){
+  const t = db.threads.find(x => x.id === id);
+
+  if (!t){
+    app.innerHTML = `
+      <p class="empty">
+        Thread not found.<br><br>
+        <a href="#/threads">← back to threads</a>
+      </p>`;
+    return;
+  }
+
+  const mine = posterId(t.id);
+
+ const repliesHTML = t.replies.map(r => `
+    <article class="reply" id="p-${r.id}">
+      <div class="meta">
+        <span class="pid">A.R.C#${r.posterId}</span>
+        <span>${timeAgo(r.createdAt)}</span>
+        ${r.posterId === mine
+          ? `<button class="del" title="Delete reply"
+                     data-action="del-reply"
+                     data-thread="${t.id}"
+                     data-reply="${r.id}">×</button>`
+          : ''}
+      </div>
+      ${r.body ? `<p class="body">${esc(r.body)}</p>` : ''}
+      ${mediaHTML(r.media)}
+    </article>
+  `).join('');
+
+  app.innerHTML = `
+    <a class="back" href="#/threads">← threads</a>
+
+    <article class="card op">
+      <div class="meta">
+        <span class="tag">OP</span>
+        <span class="pid">A.R.C#${t.posterId}</span>
+        <span>${timeAgo(t.createdAt)}</span>
+        ${t.posterId === mine
+          ? `<button class="del" title="Delete thread"
+                     data-action="del-thread" data-id="${t.id}">×</button>`
+          : ''}
+      </div>
+      <h2>${esc(t.title)}</h2>
+      ${t.body ? `<p class="body">${esc(t.body)}</p>` : ''}
+      ${mediaHTML(t.media)}
+    </article>
+    
+    <h3 class="section-title">
+      ${t.replies.length} ${t.replies.length === 1 ? 'reply' : 'replies'}
+    </h3>
+
+    <section>
+      ${repliesHTML || '<p class="empty">No replies yet.</p>'}
+    </section>
+
+    <section class="card" style="margin-top:20px">
+      <form id="reply-form" data-thread="${t.id}">
+        <textarea name="body" rows="4" maxlength="4000"
+                  placeholder="Reply anonymously..."></textarea>
+
+        <label class="file-drop" for="reply-files">
+          <input id="reply-files" type="file" accept="image/*,video/*" multiple hidden>
+          <span>＋ Attach photos or videos</span>
+        </label>
+        <div class="preview-strip"></div>
+
+        <div class="row">
+          <span class="hint">You'll appear as <b>A.R.C#${mine}</b> in this thread</span>
+          <button type="submit">Reply</button>
+        </div>
+      </form>
+    </section>
+  `;
+}
+
+function renderLogin(){
+  app.innerHTML = `
+    <div class="page-head">
+      <h1 class="page-title small">Login</h1>
+      <p class="page-sub">Account access for the receptacle.</p>
+    </div>
+
+    <section class="card login-box">
+      <div class="glyph">⬡ ⬡ ⬡</div>
+      <h2>Authentication lives elsewhere</h2>
+      <p>
+        This page is a placeholder. Login is handled by a separate service —
+        nothing here collects credentials.
+      </p>
+      <div class="slot">Inject auth form / iframe / redirect here</div>
+    </section>
+  `;
+}
+
+function renderNotFound(){
+  app.innerHTML = `
+    <div class="page-head">
+      <h1 class="page-title small">Not found</h1>
+      <p class="page-sub">That route doesn't exist in the receptacle.</p>
+    </div>
+    <p class="empty"><a href="#/">← back to dashboard</a></p>
+  `;
+}
+
+function threadCard(t, query){
+  const n = t.replies.length;
+  const m = (t.media || []).length;
+  return `
+    <article class="card thread-card">
+      <div class="meta">
+        <span class="pid">A.R.C#${t.posterId}</span>
+        <span>${timeAgo(t.createdAt)}</span>
+        <span>· ${n} ${n === 1 ? 'reply' : 'replies'}</span>
+        ${m ? `<span class="media-count">📎 ${m}</span>` : ''}
+      </div>
+      <h3>
+        <a href="#/thread/${encodeURIComponent(t.id)}">${highlight(t.title, query)}</a>
+      </h3>
+      <p class="body">${highlight(t.body, query)}</p>
+    </article>
+  `;
+}
+
+document.addEventListener('submit', async e => {
+  const form = e.target;
+
+  if (form.id === 'new-thread-form'){
+    e.preventDefault();
+    const fd    = new FormData(form);
+    const body  = (fd.get('body') || '').trim();
+    const files = draftFor(form).slice();
+
+    if (!body && !files.length){
+      alert('Write something or attach a photo/video first.');
+      return;
+    }
+
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn){ btn.disabled = true; btn.textContent = 'Posting…'; }
+
+    const media = await storeFiles(files);
+
+    const title = (fd.get('title') || '').trim()
+                  || body.split('\n')[0].slice(0, 80)
+                  || (media[0] && media[0].name.slice(0, 80))
+                  || 'Untitled';
+
+    const id  = uid();
+    const now = Date.now();
+
+    db.threads.push({
+      id,
+      title,
+      body,
+      media,
+      createdAt: now,
+      bumpedAt:  now,
+      posterId:  posterId(id),
+      replies:   []
+    });
+
+    save();
+
+    drafts.delete(form.id);
+    clearPreviewUrls();
+
+    const target = '#/thread/' + encodeURIComponent(id);
+    if (location.hash === target) render();
+    else location.hash = target;
+    return;
+  }
+
+  if (form.id === 'reply-form'){
+    e.preventDefault();
+    const fd    = new FormData(form);
+    const body  = (fd.get('body') || '').trim();
+    const files = draftFor(form).slice();
+
+    if (!body && !files.length) return;
+
+    const t = db.threads.find(x => x.id === form.dataset.thread);
+    if (!t) return;
+
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn){ btn.disabled = true; btn.textContent = 'Sending…'; }
+
+    const media = await storeFiles(files);
+
+    const reply = {
+      id:        uid(),
+      body,
+      media,
+      createdAt: Date.now(),
+      posterId:  posterId(t.id)
+    };
+
+    t.replies.push(reply);
+    t.bumpedAt = Date.now();
+    save();
+
+    drafts.delete(form.id);
+    clearPreviewUrls();
+    render();
+
+    const el = document.getElementById('p-' + reply.id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+
+app.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+
+  const action = btn.dataset.action;
+
+  if (action === 'del-reply'){
+    const t = db.threads.find(x => x.id === btn.dataset.thread);
+    if (!t) return;
+    if (!confirm('Delete this reply?')) return;
+
+    const gone = t.replies.find(r => r.id === btn.dataset.reply);
+    t.replies = t.replies.filter(r => r.id !== btn.dataset.reply);
+    save();
+
+    if (gone) delMedia((gone.media || []).map(m => m.id));
+    render();
+  }
+
+  if (action === 'del-thread'){
+    if (!confirm('Delete this entire thread and all its replies?')) return;
+
+    const gone = db.threads.find(x => x.id === btn.dataset.id);
+    db.threads = db.threads.filter(x => x.id !== btn.dataset.id);
+    save();
+
+    if (gone){
+      const ids = [
+        ...(gone.media || []).map(m => m.id),
+        ...gone.replies.flatMap(r => (r.media || []).map(m => m.id))
+      ];
+      delMedia(ids);
+    }
+
+    if (location.hash === '#/threads') render();
+    else location.hash = '#/threads';
+  }
+});
+
+
+document.addEventListener('change', e => {
+  const input = e.target;
+  if (input.type !== 'file') return;
+
+  const form = input.closest('form');
+  if (!form) return;
+
+  const arr = draftFor(form);
+
+  for (const f of input.files){
+    if (f.size > MAX_FILE_BYTES){
+      alert(`"${f.name}" is too large. Max ${MAX_FILE_MB} MB per file.`);
+      continue;
+    }
+    const dup = arr.some(x =>
+      x.name === f.name && x.size === f.size && x.lastModified === f.lastModified);
+    if (!dup) arr.push(f);
+  }
+
+  input.value = '';           
+  renderPreview(form);
+});
+
+document.addEventListener('click', e => {
+  const x = e.target.closest('.preview-x');
+  if (!x) return;
+
+  const form = x.closest('form');
+  if (!form) return;
+
+  draftFor(form).splice(Number(x.dataset.remove), 1);
+  renderPreview(form);
+});
+
+window.addEventListener('hashchange', render);
+
+load();
+render();
+</script>
+</body>
+</html>
